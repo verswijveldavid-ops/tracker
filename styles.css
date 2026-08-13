@@ -18,7 +18,14 @@
 
 * { box-sizing: border-box; }
 
-html, body {
+html {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  height: 100%;
+}
+
+body {
   margin: 0;
   padding: 0;
   background: var(--bg);
@@ -27,14 +34,9 @@ html, body {
   font-size: 16px;
   line-height: 1.4;
   -webkit-font-smoothing: antialiased;
-  overscroll-behavior-y: none;
-  overflow-x: hidden;
-}
-
-body {
   min-height: 100vh;
-  min-height: 100dvh;
   padding-top: env(safe-area-inset-top);
+  overflow-x: hidden;
 }
 
 .hidden { display: none !important; }
