@@ -1,6 +1,6 @@
 // Simple app-shell service worker.
 // Bump CACHE_VERSION when you change any of the cached files below.
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const CACHE_NAME = `tracker-${CACHE_VERSION}`;
 const SHELL = [
   './',

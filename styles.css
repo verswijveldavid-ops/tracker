@@ -584,9 +584,17 @@ input[type="range"]::-moz-range-thumb {
   margin-top: 2px;
 }
 
-#hours-chart {
+.chart-wrap {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  margin-bottom: 12px;
+}
+.chart-wrap canvas {
+  position: absolute;
+  inset: 0;
   width: 100% !important;
-  max-height: 220px;
+  height: 100% !important;
 }
 
 .habit-stats {

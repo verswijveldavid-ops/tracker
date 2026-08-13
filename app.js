@@ -568,7 +568,6 @@ function drawChart(Chart, canvasId, storeKey, dates, hoursArr, range) {
       }
     }
   });
-  canvas.style.height = '180px';
 }
 
 let chartLoader;
