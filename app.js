@@ -41,7 +41,6 @@ const state = {
   currentTab: 'today',
   calendarMonth: monthAnchor(new Date()),
   selectedDate: dateStr(addDays(new Date(), -1)), // default yesterday
-  plannerDate: dateStr(addDays(new Date(), 1)),    // default tomorrow
   editingHabits: false,
   editingSelected: false,
   unsubHabits: null,
@@ -373,36 +372,38 @@ function renderTodayTasks() {
 }
 
 // ---------- PLANNER VIEW ----------
+function addPlanItem(text) {
+  const val = text.trim();
+  if (!val) return;
+  const date = tomorrowStr();
+  const cur = dayPlan(date).slice();
+  cur.push({ text: val, done: false });
+  saveDay(date, { plan: cur });
+}
+
 $('#plan-new-input').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
     e.preventDefault();
-    const val = e.target.value.trim();
-    if (!val) return;
-    const cur = dayPlan(state.plannerDate).slice();
-    cur.push({ text: val, done: false });
-    saveDay(state.plannerDate, { plan: cur });
+    if (!e.target.value.trim()) return;
+    addPlanItem(e.target.value);
     e.target.value = '';
     renderPlanner();
-    // Keep focus on the input for rapid entry
     setTimeout(() => $('#plan-new-input').focus(), 0);
   }
 });
 $('#plan-new-input').addEventListener('blur', (e) => {
-  const val = e.target.value.trim();
-  if (!val) return;
-  const cur = dayPlan(state.plannerDate).slice();
-  cur.push({ text: val, done: false });
-  saveDay(state.plannerDate, { plan: cur });
+  if (!e.target.value.trim()) return;
+  addPlanItem(e.target.value);
   e.target.value = '';
   renderPlanner();
 });
 
 function renderPlanner() {
-  const d = parseDate(state.plannerDate);
-  $('#planner-weekday').textContent = plannerLabel(state.plannerDate);
+  const date = tomorrowStr();
+  const d = parseDate(date);
   $('#planner-date').textContent = formatFullDate(d);
 
-  const plan = dayPlan(state.plannerDate);
+  const plan = dayPlan(date);
   const list = $('#plan-items');
   list.innerHTML = plan.map((item, i) => `
     <div class="plan-row" data-idx="${i}">
@@ -417,22 +418,19 @@ function renderPlanner() {
     const input = row.querySelector('input');
     input.addEventListener('change', () => {
       const val = input.value.trim();
-      const cur = dayPlan(state.plannerDate).slice();
-      if (!val) {
-        cur.splice(idx, 1);
-      } else {
-        cur[idx] = { ...cur[idx], text: val };
-      }
-      saveDay(state.plannerDate, { plan: cur });
+      const cur = dayPlan(date).slice();
+      if (!val) cur.splice(idx, 1);
+      else cur[idx] = { ...cur[idx], text: val };
+      saveDay(date, { plan: cur });
       if (!val) renderPlanner();
     });
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') { e.preventDefault(); $('#plan-new-input').focus(); }
     });
     row.querySelector('.plan-del').addEventListener('click', () => {
-      const cur = dayPlan(state.plannerDate).slice();
+      const cur = dayPlan(date).slice();
       cur.splice(idx, 1);
-      saveDay(state.plannerDate, { plan: cur });
+      saveDay(date, { plan: cur });
       renderPlanner();
     });
   });
@@ -443,9 +441,9 @@ $$('.date-nav').forEach(btn => btn.addEventListener('click', () => {
   const nav = btn.dataset.nav;
   if (nav === 'prev-month') { state.calendarMonth = addMonths(state.calendarMonth, -1); renderCalendar(); }
   else if (nav === 'next-month') { state.calendarMonth = addMonths(state.calendarMonth, 1); renderCalendar(); }
-  else if (nav === 'prev-plan') { state.plannerDate = dateStr(addDays(parseDate(state.plannerDate), -1)); renderPlanner(); }
-  else if (nav === 'next-plan') { state.plannerDate = dateStr(addDays(parseDate(state.plannerDate), 1)); renderPlanner(); }
 }));
+
+function tomorrowStr() { return dateStr(addDays(new Date(), 1)); }
 
 $('#selected-edit-btn').addEventListener('click', () => {
   state.editingSelected = !state.editingSelected;

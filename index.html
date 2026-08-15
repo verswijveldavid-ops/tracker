@@ -10,7 +10,7 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" type="image/svg+xml" href="icon.svg" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="styles.css?v=4" />
+  <link rel="stylesheet" href="styles.css?v=5" />
   <title>Tracker</title>
 </head>
 <body>
@@ -83,13 +83,11 @@
 
     <!-- ================= PLANNER ================= -->
     <section class="view hidden" data-view="planner">
-      <header class="view-header">
-        <button class="date-nav" data-nav="prev-plan" aria-label="Previous day">‹</button>
+      <header class="view-header simple">
         <div class="date-display">
-          <div class="date-day" id="planner-weekday">—</div>
+          <div class="date-day" id="planner-weekday">TOMORROW</div>
           <div class="date-full" id="planner-date">—</div>
         </div>
-        <button class="date-nav" data-nav="next-plan" aria-label="Next day">›</button>
       </header>
 
       <div class="card">
@@ -207,6 +205,6 @@
     </nav>
   </main>
 
-  <script type="module" src="app.js?v=4"></script>
+  <script type="module" src="app.js?v=5"></script>
 </body>
 </html>
