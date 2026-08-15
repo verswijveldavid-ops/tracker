@@ -10,7 +10,7 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" type="image/svg+xml" href="icon.svg" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="styles.css?v=5" />
+  <link rel="stylesheet" href="styles.css?v=6" />
   <title>Tracker</title>
 </head>
 <body>
@@ -48,12 +48,6 @@
         </div>
       </header>
 
-      <!-- Today's plan (shows only if user planned this day yesterday) -->
-      <div class="card hidden" id="today-plan-card">
-        <h2 class="card-title">Today's plan</h2>
-        <div id="today-plan-list" class="plan-list-check"></div>
-      </div>
-
       <div class="card">
         <div class="card-title-row">
           <h2 class="card-title">Tasks</h2>
@@ -61,6 +55,12 @@
         </div>
         <div id="habits-list" class="habits-list"></div>
         <button id="add-task-btn" class="btn-secondary hidden" style="margin-top:8px;">+ Add task</button>
+      </div>
+
+      <!-- Today's plan (from last night's planning) -->
+      <div class="card hidden" id="today-plan-card">
+        <h2 class="card-title">Today's plan</h2>
+        <div id="today-plan-list" class="plan-list-check"></div>
       </div>
 
       <div class="card">
@@ -205,6 +205,6 @@
     </nav>
   </main>
 
-  <script type="module" src="app.js?v=5"></script>
+  <script type="module" src="app.js?v=6"></script>
 </body>
 </html>
