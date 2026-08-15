@@ -41,6 +41,7 @@ const state = {
   currentTab: 'today',
   calendarMonth: monthAnchor(new Date()),
   selectedDate: dateStr(addDays(new Date(), -1)), // default yesterday
+  plannerDate: dateStr(addDays(new Date(), 1)),    // default tomorrow
   editingHabits: false,
   editingSelected: false,
   unsubHabits: null,
@@ -110,7 +111,16 @@ function activeHabits() {
   return state.habits.filter(h => !h.archived).sort((a, b) => a.order - b.order);
 }
 function habitById(id) { return state.habits.find(h => h.id === id); }
-function dayData(dateS) { return state.days[dateS] || { hours: 0, diary: '', habits: {} }; }
+function dayData(dateS) { return state.days[dateS] || { hours: 0, diary: '', habits: {}, plan: [] }; }
+function dayPlan(dateS) { return (state.days[dateS] && state.days[dateS].plan) || []; }
+
+function plannerLabel(dateS) {
+  if (dateS === todayStr()) return 'Today';
+  if (dateS === dateStr(addDays(new Date(), 1))) return 'Tomorrow';
+  if (dateS === dateStr(addDays(new Date(), -1))) return 'Yesterday';
+  const d = parseDate(dateS);
+  return `${MONTHS_SHORT[d.getMonth()]} ${d.getDate()}`;
+}
 function escapeHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 }
@@ -262,7 +272,35 @@ function renderToday() {
   $('#hours-value').textContent = formatHM(data.hours || 0);
   if (document.activeElement !== $('#diary')) $('#diary').value = data.diary || '';
 
+  renderTodayPlan();
   renderTodayTasks();
+}
+
+function renderTodayPlan() {
+  const today = todayStr();
+  const plan = dayPlan(today);
+  const card = $('#today-plan-card');
+  const list = $('#today-plan-list');
+  if (!plan || plan.length === 0) {
+    card.classList.add('hidden');
+    return;
+  }
+  card.classList.remove('hidden');
+  list.innerHTML = plan.map((item, i) => `
+    <div class="plan-check-row ${item.done ? 'done' : ''}" data-idx="${i}">
+      <div class="plan-check-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg>
+      </div>
+      <div class="plan-check-text">${escapeHtml(item.text)}</div>
+    </div>
+  `).join('');
+  list.querySelectorAll('.plan-check-row').forEach(row => row.addEventListener('click', () => {
+    const idx = parseInt(row.dataset.idx, 10);
+    const cur = dayPlan(today).slice();
+    cur[idx] = { ...cur[idx], done: !cur[idx].done };
+    saveDay(today, { plan: cur });
+    row.classList.toggle('done');
+  }));
 }
 
 function renderTodayTasks() {
@@ -334,12 +372,79 @@ function renderTodayTasks() {
   }
 }
 
+// ---------- PLANNER VIEW ----------
+$('#plan-new-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    const val = e.target.value.trim();
+    if (!val) return;
+    const cur = dayPlan(state.plannerDate).slice();
+    cur.push({ text: val, done: false });
+    saveDay(state.plannerDate, { plan: cur });
+    e.target.value = '';
+    renderPlanner();
+    // Keep focus on the input for rapid entry
+    setTimeout(() => $('#plan-new-input').focus(), 0);
+  }
+});
+$('#plan-new-input').addEventListener('blur', (e) => {
+  const val = e.target.value.trim();
+  if (!val) return;
+  const cur = dayPlan(state.plannerDate).slice();
+  cur.push({ text: val, done: false });
+  saveDay(state.plannerDate, { plan: cur });
+  e.target.value = '';
+  renderPlanner();
+});
+
+function renderPlanner() {
+  const d = parseDate(state.plannerDate);
+  $('#planner-weekday').textContent = plannerLabel(state.plannerDate);
+  $('#planner-date').textContent = formatFullDate(d);
+
+  const plan = dayPlan(state.plannerDate);
+  const list = $('#plan-items');
+  list.innerHTML = plan.map((item, i) => `
+    <div class="plan-row" data-idx="${i}">
+      <span class="plan-bullet">•</span>
+      <input type="text" value="${escapeHtml(item.text)}" />
+      <button class="plan-del" aria-label="Delete">✕</button>
+    </div>
+  `).join('');
+
+  list.querySelectorAll('.plan-row').forEach(row => {
+    const idx = parseInt(row.dataset.idx, 10);
+    const input = row.querySelector('input');
+    input.addEventListener('change', () => {
+      const val = input.value.trim();
+      const cur = dayPlan(state.plannerDate).slice();
+      if (!val) {
+        cur.splice(idx, 1);
+      } else {
+        cur[idx] = { ...cur[idx], text: val };
+      }
+      saveDay(state.plannerDate, { plan: cur });
+      if (!val) renderPlanner();
+    });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); $('#plan-new-input').focus(); }
+    });
+    row.querySelector('.plan-del').addEventListener('click', () => {
+      const cur = dayPlan(state.plannerDate).slice();
+      cur.splice(idx, 1);
+      saveDay(state.plannerDate, { plan: cur });
+      renderPlanner();
+    });
+  });
+}
+
 // ---------- CALENDAR + STATS VIEW ----------
 $$('.date-nav').forEach(btn => btn.addEventListener('click', () => {
   const nav = btn.dataset.nav;
-  if (nav === 'prev-month') state.calendarMonth = addMonths(state.calendarMonth, -1);
-  else if (nav === 'next-month') state.calendarMonth = addMonths(state.calendarMonth, 1);
-  renderCalendar();
+  if (nav === 'prev-month') { state.calendarMonth = addMonths(state.calendarMonth, -1); renderCalendar(); }
+  else if (nav === 'next-month') { state.calendarMonth = addMonths(state.calendarMonth, 1); renderCalendar(); }
+  else if (nav === 'prev-plan') { state.plannerDate = dateStr(addDays(parseDate(state.plannerDate), -1)); renderPlanner(); }
+  else if (nav === 'next-plan') { state.plannerDate = dateStr(addDays(parseDate(state.plannerDate), 1)); renderPlanner(); }
 }));
 
 $('#selected-edit-btn').addEventListener('click', () => {
@@ -620,6 +725,7 @@ $('#import-file').addEventListener('change', async (e) => {
 // ---------- Master render ----------
 function renderAll() {
   renderToday();
+  if (state.currentTab === 'planner') renderPlanner();
   if (state.currentTab === 'calendar') {
     renderCalendar();
     renderSelectedDay();

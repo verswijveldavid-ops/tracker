@@ -275,6 +275,98 @@ body {
 }
 .sel-day-empty { color: var(--text-mute); font-size: 14px; text-align: center; padding: 12px 0; }
 
+/* Planner */
+.plan-list, .plan-list-check {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.plan-row, .plan-add-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  transition: background 0.1s;
+}
+.plan-row:hover { background: var(--bg-elev-2); }
+.plan-bullet {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  color: var(--accent);
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.plan-bullet-add { color: var(--text-dim); font-size: 20px; font-weight: 300; }
+.plan-row input, .plan-add-row input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+  padding: 8px 0;
+  outline: none;
+}
+.plan-add-row input::placeholder { color: var(--text-mute); }
+.plan-row .plan-del {
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  color: var(--text-mute);
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 14px;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+}
+.plan-row:hover .plan-del { opacity: 1; }
+.plan-row .plan-del:active { color: var(--danger); background: var(--bg-elev-2); }
+@media (hover: none) {
+  .plan-row .plan-del { opacity: 1; }
+}
+
+/* Today's plan (checkable version on Today tab) */
+.plan-check-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.1s;
+  min-height: 44px;
+}
+.plan-check-row:active { background: var(--bg-elev-2); }
+.plan-check-box {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--text-mute);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.plan-check-row.done .plan-check-box {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.plan-check-box svg { width: 12px; height: 12px; color: white; opacity: 0; }
+.plan-check-row.done .plan-check-box svg { opacity: 1; }
+.plan-check-text { flex: 1; font-size: 15px; }
+.plan-check-row.done .plan-check-text {
+  color: var(--text-dim);
+  text-decoration: line-through;
+  text-decoration-color: var(--text-mute);
+}
+
 /* Modal */
 .modal {
   position: fixed; inset: 0; z-index: 90;
