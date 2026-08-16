@@ -147,6 +147,16 @@ function daySleep(dateS) {
   const s = state.days[dateS] && state.days[dateS].sleep;
   return s || null;
 }
+
+// Sleep ending on the morning of dateS (yesterday's bed + this day's wake)
+function nightSleepMinutes(dateS) {
+  const prevDate = dateStr(addDays(parseDate(dateS), -1));
+  const prev = daySleep(prevDate);
+  const cur = daySleep(dateS);
+  if (!prev || prev.bedSlot == null) return null;
+  if (!cur || cur.wakeSlot == null) return null;
+  return sleepDurationMin(prev.bedSlot, cur.wakeSlot);
+}
 function dayPlan(dateS) { return (state.days[dateS] && state.days[dateS].plan) || []; }
 
 function plannerLabel(dateS) {
@@ -281,8 +291,15 @@ function renderSleepPreview() {
   const w = parseInt($('#wake-slider').value, 10);
   $('#bed-value').textContent = bedSlotToTime(b);
   $('#wake-value').textContent = wakeSlotToTime(w);
-  const dur = sleepDurationMin(b, w);
-  $('#sleep-total').innerHTML = `Slept <span class="sleep-total-value">${formatDur(dur)}</span>`;
+  const dur = nightSleepMinutes(todayStr());
+  const totalEl = $('#sleep-total');
+  if (dur == null || dur <= 0) {
+    totalEl.textContent = '';
+    totalEl.style.display = 'none';
+  } else {
+    totalEl.style.display = '';
+    totalEl.innerHTML = `Last night <span class="sleep-total-value">${formatDur(dur)}</span>`;
+  }
 }
 
 function saveSleepFromSliders() {
@@ -681,17 +698,24 @@ function computeSummary(dates) {
 }
 
 function computeSleepStats(dates) {
-  const entries = dates.map(d => daySleep(dateStr(d))).filter(Boolean);
-  if (entries.length === 0) return null;
-  const avgBed = entries.reduce((a, e) => a + e.bedSlot, 0) / entries.length;
-  const avgWake = entries.reduce((a, e) => a + e.wakeSlot, 0) / entries.length;
-  const avgDur = entries.reduce((a, e) => a + sleepDurationMin(e.bedSlot, e.wakeSlot), 0) / entries.length;
-  // Snap averages to nearest 15-min slot for display
+  const beds = [], wakes = [], durs = [];
+  dates.forEach(d => {
+    const ds = dateStr(d);
+    const s = daySleep(ds);
+    if (s) {
+      if (s.bedSlot != null) beds.push(s.bedSlot);
+      if (s.wakeSlot != null) wakes.push(s.wakeSlot);
+    }
+    // Duration for the night that ENDED on this day
+    const dur = nightSleepMinutes(ds);
+    if (dur != null && dur > 0) durs.push(dur);
+  });
+  if (beds.length === 0 && wakes.length === 0 && durs.length === 0) return null;
+  const avg = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
   return {
-    bed: bedSlotToTime(Math.round(avgBed)),
-    wake: wakeSlotToTime(Math.round(avgWake)),
-    duration: formatDur(Math.round(avgDur / 15) * 15),
-    n: entries.length
+    bed: beds.length ? bedSlotToTime(Math.round(avg(beds))) : '—',
+    wake: wakes.length ? wakeSlotToTime(Math.round(avg(wakes))) : '—',
+    duration: durs.length ? formatDur(Math.round(avg(durs) / 15) * 15) : '—'
   };
 }
 
