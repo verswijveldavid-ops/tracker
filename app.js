@@ -61,7 +61,13 @@ const DEFAULT_HABITS = [
 function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
 function pad(n) { return String(n).padStart(2, '0'); }
 function dateStr(d) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
-function todayStr() { return dateStr(new Date()); }
+// A "day" runs 3:00am → 2:59am. So midnight to 3am is still counted as the previous day.
+const DAY_START_HOUR = 3;
+function todayStr() {
+  const now = new Date();
+  if (now.getHours() < DAY_START_HOUR) return dateStr(addDays(now, -1));
+  return dateStr(now);
+}
 function parseDate(s) { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); }
 function monthAnchor(d) { return new Date(d.getFullYear(), d.getMonth(), 1); }
 function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
@@ -92,8 +98,9 @@ const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct
 function formatFullDate(d) { return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`; }
 
 function selectedLabel(dateS) {
-  if (dateS === todayStr()) return 'Today';
-  if (dateS === dateStr(addDays(new Date(), -1))) return 'Yesterday';
+  const today = todayStr();
+  if (dateS === today) return 'Today';
+  if (dateS === dateStr(addDays(parseDate(today), -1))) return 'Yesterday';
   const d = parseDate(dateS);
   return `${WEEKDAYS[d.getDay()]}, ${MONTHS_SHORT[d.getMonth()]} ${d.getDate()}`;
 }
@@ -143,9 +150,10 @@ function daySleep(dateS) {
 function dayPlan(dateS) { return (state.days[dateS] && state.days[dateS].plan) || []; }
 
 function plannerLabel(dateS) {
-  if (dateS === todayStr()) return 'Today';
-  if (dateS === dateStr(addDays(new Date(), 1))) return 'Tomorrow';
-  if (dateS === dateStr(addDays(new Date(), -1))) return 'Yesterday';
+  const today = todayStr();
+  if (dateS === today) return 'Today';
+  if (dateS === dateStr(addDays(parseDate(today), 1))) return 'Tomorrow';
+  if (dateS === dateStr(addDays(parseDate(today), -1))) return 'Yesterday';
   const d = parseDate(dateS);
   return `${MONTHS_SHORT[d.getMonth()]} ${d.getDate()}`;
 }
@@ -312,7 +320,7 @@ function flashSave() {
 
 function renderToday() {
   const today = todayStr();
-  const d = parseDate(today);
+  const d = parseDate(today);  // Uses app's shifted "today", not calendar today
   $('#today-weekday').textContent = WEEKDAYS[d.getDay()];
   $('#today-date').textContent = formatFullDate(d);
 
@@ -523,7 +531,7 @@ $$('.date-nav').forEach(btn => btn.addEventListener('click', () => {
   else if (nav === 'next-month') { state.calendarMonth = addMonths(state.calendarMonth, 1); renderCalendar(); }
 }));
 
-function tomorrowStr() { return dateStr(addDays(new Date(), 1)); }
+function tomorrowStr() { return dateStr(addDays(parseDate(todayStr()), 1)); }
 
 $('#selected-edit-btn').addEventListener('click', () => {
   state.editingSelected = !state.editingSelected;

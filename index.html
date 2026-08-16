@@ -10,7 +10,7 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" type="image/svg+xml" href="icon.svg" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="styles.css?v=7" />
+  <link rel="stylesheet" href="styles.css?v=8" />
   <title>Tracker</title>
 </head>
 <body>
@@ -78,19 +78,19 @@
         <h2 class="card-title">Sleep</h2>
         <div class="sleep-row">
           <div class="sleep-label">
-            <span>Went to bed</span>
-            <span class="sleep-value" id="bed-value">—</span>
-          </div>
-          <input type="range" id="bed-slider" min="0" max="20" step="1" value="8" />
-          <div class="sleep-scale"><span>21:00</span><span>23:30</span><span>02:00</span></div>
-        </div>
-        <div class="sleep-row">
-          <div class="sleep-label">
             <span>Woke up</span>
             <span class="sleep-value" id="wake-value">—</span>
           </div>
           <input type="range" id="wake-slider" min="0" max="32" step="1" value="8" />
           <div class="sleep-scale"><span>05:00</span><span>09:00</span><span>13:00</span></div>
+        </div>
+        <div class="sleep-row">
+          <div class="sleep-label">
+            <span>Went to bed</span>
+            <span class="sleep-value" id="bed-value">—</span>
+          </div>
+          <input type="range" id="bed-slider" min="0" max="20" step="1" value="8" />
+          <div class="sleep-scale"><span>21:00</span><span>23:30</span><span>02:00</span></div>
         </div>
         <div class="sleep-total" id="sleep-total">—</div>
       </div>
@@ -242,6 +242,6 @@
     </nav>
   </main>
 
-  <script type="module" src="app.js?v=7"></script>
+  <script type="module" src="app.js?v=8"></script>
 </body>
 </html>
