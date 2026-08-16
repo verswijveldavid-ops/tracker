@@ -111,6 +111,35 @@ function activeHabits() {
 }
 function habitById(id) { return state.habits.find(h => h.id === id); }
 function dayData(dateS) { return state.days[dateS] || { hours: 0, diary: '', habits: {}, plan: [] }; }
+
+// Sleep helpers — bedSlot is minutes-from-21:00 in 15-min steps (0..20, so 21:00..02:00)
+// wakeSlot is minutes-from-05:00 in 15-min steps (0..32, so 05:00..13:00)
+function bedSlotToTime(slot) {
+  const total = 21 * 60 + slot * 15;
+  const h = Math.floor(total / 60) % 24;
+  const m = total % 60;
+  return `${pad(h)}:${pad(m)}`;
+}
+function wakeSlotToTime(slot) {
+  const total = 5 * 60 + slot * 15;
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  return `${pad(h)}:${pad(m)}`;
+}
+function sleepDurationMin(bedSlot, wakeSlot) {
+  const bedFrom21 = bedSlot * 15;
+  const wakeFrom21 = 8 * 60 + wakeSlot * 15;
+  return wakeFrom21 - bedFrom21;
+}
+function formatDur(minutes) {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m === 0 ? `${h}h` : `${h}h ${pad(m)}m`;
+}
+function daySleep(dateS) {
+  const s = state.days[dateS] && state.days[dateS].sleep;
+  return s || null;
+}
 function dayPlan(dateS) { return (state.days[dateS] && state.days[dateS].plan) || []; }
 
 function plannerLabel(dateS) {
@@ -233,6 +262,27 @@ $('#hours-slider').addEventListener('change', (e) => {
   saveDay(todayStr(), { hours: parseInt(e.target.value, 10) });
   flashSave();
 });
+
+$('#bed-slider').addEventListener('input', () => renderSleepPreview());
+$('#wake-slider').addEventListener('input', () => renderSleepPreview());
+$('#bed-slider').addEventListener('change', () => saveSleepFromSliders());
+$('#wake-slider').addEventListener('change', () => saveSleepFromSliders());
+
+function renderSleepPreview() {
+  const b = parseInt($('#bed-slider').value, 10);
+  const w = parseInt($('#wake-slider').value, 10);
+  $('#bed-value').textContent = bedSlotToTime(b);
+  $('#wake-value').textContent = wakeSlotToTime(w);
+  const dur = sleepDurationMin(b, w);
+  $('#sleep-total').innerHTML = `Slept <span class="sleep-total-value">${formatDur(dur)}</span>`;
+}
+
+function saveSleepFromSliders() {
+  const b = parseInt($('#bed-slider').value, 10);
+  const w = parseInt($('#wake-slider').value, 10);
+  saveDay(todayStr(), { sleep: { bedSlot: b, wakeSlot: w } });
+  flashSave();
+}
 $('#diary').addEventListener('input', (e) => {
   clearTimeout(state.diaryTimer);
   const val = e.target.value;
@@ -271,6 +321,11 @@ function renderToday() {
   $('#hours-value').textContent = formatHM(data.hours || 0);
   if (document.activeElement !== $('#diary')) $('#diary').value = data.diary || '';
 
+  const sleep = data.sleep || { bedSlot: 8, wakeSlot: 8 }; // default 23:00 → 07:00
+  $('#bed-slider').value = sleep.bedSlot;
+  $('#wake-slider').value = sleep.wakeSlot;
+  renderSleepPreview();
+
   renderTodayPlan();
   renderTodayTasks();
 }
@@ -291,15 +346,40 @@ function renderTodayPlan() {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg>
       </div>
       <div class="plan-check-text">${escapeHtml(item.text)}</div>
+      <button class="plan-procrastinate" data-idx="${i}" title="Move to tomorrow">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
     </div>
   `).join('');
-  list.querySelectorAll('.plan-check-row').forEach(row => row.addEventListener('click', () => {
-    const idx = parseInt(row.dataset.idx, 10);
-    const cur = dayPlan(today).slice();
-    cur[idx] = { ...cur[idx], done: !cur[idx].done };
-    saveDay(today, { plan: cur });
-    row.classList.toggle('done');
-  }));
+  list.querySelectorAll('.plan-check-row').forEach(row => {
+    // clicks on the row toggle done, except the procrastinate button
+    row.addEventListener('click', (e) => {
+      if (e.target.closest('.plan-procrastinate')) return;
+      const idx = parseInt(row.dataset.idx, 10);
+      const cur = dayPlan(today).slice();
+      cur[idx] = { ...cur[idx], done: !cur[idx].done };
+      saveDay(today, { plan: cur });
+      row.classList.toggle('done');
+    });
+    // procrastinate: move from today to tomorrow
+    row.querySelector('.plan-procrastinate').addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const idx = parseInt(row.dataset.idx, 10);
+      const item = dayPlan(today)[idx];
+      if (!item) return;
+      const todayNew = dayPlan(today).slice();
+      todayNew.splice(idx, 1);
+      const tomorrow = tomorrowStr();
+      const tomorrowNew = dayPlan(tomorrow).slice();
+      // add as fresh (undone) to tomorrow
+      tomorrowNew.push({ text: item.text, done: false });
+      await Promise.all([
+        saveDay(today, { plan: todayNew }),
+        saveDay(tomorrow, { plan: tomorrowNew })
+      ]);
+      renderTodayPlan();
+    });
+  });
 }
 
 function renderTodayTasks() {
@@ -592,6 +672,33 @@ function computeSummary(dates) {
   return { hoursArr, total, avg, best, streak };
 }
 
+function computeSleepStats(dates) {
+  const entries = dates.map(d => daySleep(dateStr(d))).filter(Boolean);
+  if (entries.length === 0) return null;
+  const avgBed = entries.reduce((a, e) => a + e.bedSlot, 0) / entries.length;
+  const avgWake = entries.reduce((a, e) => a + e.wakeSlot, 0) / entries.length;
+  const avgDur = entries.reduce((a, e) => a + sleepDurationMin(e.bedSlot, e.wakeSlot), 0) / entries.length;
+  // Snap averages to nearest 15-min slot for display
+  return {
+    bed: bedSlotToTime(Math.round(avgBed)),
+    wake: wakeSlotToTime(Math.round(avgWake)),
+    duration: formatDur(Math.round(avgDur / 15) * 15),
+    n: entries.length
+  };
+}
+
+function renderSleepStatsInto(bedEl, wakeEl, durEl, stats) {
+  if (!stats) {
+    bedEl.textContent = '—';
+    wakeEl.textContent = '—';
+    durEl.textContent = '—';
+    return;
+  }
+  bedEl.textContent = stats.bed;
+  wakeEl.textContent = stats.wake;
+  durEl.textContent = stats.duration;
+}
+
 function computeHabitStats(dates) {
   return activeHabits().map(h => {
     const done = dates.filter(d => (dayData(dateStr(d)).habits || {})[h.id]).length;
@@ -622,6 +729,7 @@ async function renderStats() {
   $('#w-best').textContent  = formatDec(wk.best);
   $('#w-streak').textContent = wk.streak;
   renderHabitStatsInto($('#week-habits'), computeHabitStats(weekDates));
+  renderSleepStatsInto($('#w-bed'), $('#w-wake'), $('#w-sleep'), computeSleepStats(weekDates));
 
   const monthDates = rangeDates(30);
   const mo = computeSummary(monthDates);
@@ -630,6 +738,7 @@ async function renderStats() {
   $('#m-best').textContent  = formatDec(mo.best);
   $('#m-streak').textContent = mo.streak;
   renderHabitStatsInto($('#month-habits'), computeHabitStats(monthDates));
+  renderSleepStatsInto($('#m-bed'), $('#m-wake'), $('#m-sleep'), computeSleepStats(monthDates));
 
   // heatmap
   const heat = $('#month-heatmap');

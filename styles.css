@@ -275,6 +275,85 @@ body {
 }
 .sel-day-empty { color: var(--text-mute); font-size: 14px; text-align: center; padding: 12px 0; }
 
+/* Sleep sliders */
+.sleep-row { margin-bottom: 18px; }
+.sleep-row:last-of-type { margin-bottom: 12px; }
+.sleep-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+.sleep-value {
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.sleep-scale {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  color: var(--text-mute);
+  font-size: 11px;
+}
+.sleep-total {
+  text-align: center;
+  color: var(--text);
+  font-size: 14px;
+  padding: 10px 0 0;
+  border-top: 1px solid var(--border);
+  margin-top: 8px;
+}
+.sleep-total .sleep-total-value {
+  color: var(--accent);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sleep stats section */
+.sleep-stats {
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+  margin-top: 16px;
+}
+.sleep-stats-title {
+  font-size: 12px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+.sleep-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  text-align: center;
+}
+.stat-value.stat-small { font-size: 18px; }
+
+/* Procrastinate button on plan check rows */
+.plan-check-row .plan-procrastinate {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-mute);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: color 0.15s, background 0.15s;
+}
+.plan-check-row .plan-procrastinate:hover,
+.plan-check-row .plan-procrastinate:active { color: var(--accent); background: var(--bg-elev-2); }
+.plan-check-row .plan-procrastinate svg { width: 18px; height: 18px; }
+
 /* Planner */
 .plan-list, .plan-list-check {
   display: flex;
