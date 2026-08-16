@@ -276,6 +276,36 @@ body {
 }
 .sel-day-empty { color: var(--text-mute); font-size: 14px; text-align: center; padding: 12px 0; }
 
+/* Tappable date button (planner) */
+.date-tap-btn {
+  background: transparent;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 12px;
+  cursor: pointer;
+  color: var(--text);
+  font: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  transition: background 0.15s;
+}
+.date-tap-btn:hover, .date-tap-btn:active { background: var(--bg-elev); }
+.date-tap-btn .date-day { color: var(--text-dim); font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; }
+.date-tap-btn .date-full {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 20px;
+  font-weight: 600;
+}
+.date-caret {
+  width: 16px;
+  height: 16px;
+  color: var(--text-dim);
+}
+
 /* Sleep sliders */
 .sleep-row { margin-bottom: 18px; }
 .sleep-row:last-of-type { margin-bottom: 12px; }

@@ -8,9 +8,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Tracker" />
   <link rel="manifest" href="manifest.json" />
-  <link rel="icon" href="icon-192.png?v=11" />
-  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=11" />
-  <link rel="stylesheet" href="styles.css?v=11" />
+  <link rel="icon" href="icon-192.png?v=12" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png?v=12" />
+  <link rel="stylesheet" href="styles.css?v=12" />
   <title>Tracker</title>
 </head>
 <body>
@@ -19,7 +19,7 @@
   <div id="signin-overlay" class="overlay hidden">
     <div class="signin-card">
       <div class="signin-logo">
-        <img src="icon-192.png?v=11" alt="" />
+        <img src="icon-192.png?v=12" alt="" />
       </div>
       <h1>Tracker</h1>
       <p>Sign in to sync across devices.</p>
@@ -107,10 +107,13 @@
     <!-- ================= PLANNER ================= -->
     <section class="view hidden" data-view="planner">
       <header class="view-header simple">
-        <div class="date-display">
+        <button id="planner-date-btn" class="date-tap-btn" aria-label="Pick a different day">
           <div class="date-day" id="planner-weekday">TOMORROW</div>
-          <div class="date-full" id="planner-date">—</div>
-        </div>
+          <div class="date-full">
+            <span id="planner-date">—</span>
+            <svg class="date-caret" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </button>
       </header>
 
       <div class="card">
@@ -202,6 +205,28 @@
       </div>
     </section>
 
+    <!-- PLAN DATE PICKER MODAL -->
+    <div id="plan-picker-modal" class="modal hidden">
+      <div class="modal-backdrop" data-close></div>
+      <div class="modal-sheet">
+        <div class="modal-header">
+          <h2>Pick a day</h2>
+          <button class="icon-btn" data-close>✕</button>
+        </div>
+        <div class="modal-body">
+          <header class="view-header" style="padding-top:0;">
+            <button class="date-nav" data-nav="prev-pick-month">‹</button>
+            <div class="date-display"><div class="date-full" id="pick-month">—</div></div>
+            <button class="date-nav" data-nav="next-pick-month">›</button>
+          </header>
+          <div class="calendar-weekdays">
+            <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+          </div>
+          <div id="pick-grid" class="calendar-grid"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- SETTINGS MODAL -->
     <div id="settings-modal" class="modal hidden">
       <div class="modal-backdrop" data-close></div>
@@ -244,6 +269,6 @@
     </nav>
   </main>
 
-  <script type="module" src="app.js?v=11"></script>
+  <script type="module" src="app.js?v=12"></script>
 </body>
 </html>

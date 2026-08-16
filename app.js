@@ -41,6 +41,8 @@ const state = {
   currentTab: 'today',
   calendarMonth: monthAnchor(new Date()),
   selectedDate: dateStr(addDays(new Date(), -1)), // default yesterday
+  plannerOverrideDate: null, // when set, planner shows this date instead of tomorrow
+  pickerMonth: monthAnchor(new Date()),
   editingHabits: false,
   editingSelected: false,
   unsubHabits: null,
@@ -262,6 +264,10 @@ async function saveHabits() {
 // ---------- Tab routing ----------
 $$('.tab').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
 function switchTab(name) {
+  // Leaving the planner resets any picked date so it defaults back to tomorrow next time
+  if (state.currentTab === 'planner' && name !== 'planner') {
+    state.plannerOverrideDate = null;
+  }
   state.currentTab = name;
   $$('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
   $$('.view').forEach(v => v.classList.toggle('hidden', v.dataset.view !== name));
@@ -480,7 +486,7 @@ function renderTodayTasks() {
 function addPlanItem(text) {
   const val = text.trim();
   if (!val) return;
-  const date = tomorrowStr();
+  const date = plannerDate();
   const cur = dayPlan(date).slice();
   cur.push({ text: val, done: false });
   saveDay(date, { plan: cur });
@@ -504,8 +510,10 @@ $('#plan-new-input').addEventListener('blur', (e) => {
 });
 
 function renderPlanner() {
-  const date = tomorrowStr();
+  const date = plannerDate();
   const d = parseDate(date);
+  const isTomorrow = date === tomorrowStr();
+  $('#planner-weekday').textContent = isTomorrow ? 'TOMORROW' : WEEKDAYS[d.getDay()].toUpperCase();
   $('#planner-date').textContent = formatFullDate(d);
 
   const plan = dayPlan(date);
@@ -541,6 +549,63 @@ function renderPlanner() {
   });
 }
 
+// ---------- PLAN DATE PICKER ----------
+$('#planner-date-btn').addEventListener('click', openPlanPicker);
+$$('#plan-picker-modal [data-close]').forEach(el => el.addEventListener('click', closePlanPicker));
+
+function openPlanPicker() {
+  state.pickerMonth = monthAnchor(parseDate(plannerDate()));
+  renderPicker();
+  $('#plan-picker-modal').classList.remove('hidden');
+}
+function closePlanPicker() { $('#plan-picker-modal').classList.add('hidden'); }
+
+$$('#plan-picker-modal [data-nav]').forEach(btn => btn.addEventListener('click', () => {
+  const nav = btn.dataset.nav;
+  if (nav === 'prev-pick-month') state.pickerMonth = addMonths(state.pickerMonth, -1);
+  else if (nav === 'next-pick-month') state.pickerMonth = addMonths(state.pickerMonth, 1);
+  renderPicker();
+}));
+
+function renderPicker() {
+  const anchor = state.pickerMonth;
+  $('#pick-month').textContent = `${MONTHS[anchor.getMonth()]} ${anchor.getFullYear()}`;
+
+  const first = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
+  const startOffset = (first.getDay() + 6) % 7;
+  const gridStart = addDays(first, -startOffset);
+
+  const today = todayStr();
+  const currentPick = plannerDate();
+  let html = '';
+  for (let i = 0; i < 42; i++) {
+    const d = addDays(gridStart, i);
+    const ds = dateStr(d);
+    const outside = d.getMonth() !== anchor.getMonth();
+    const isToday = ds === today;
+    const isSelected = ds === currentPick;
+    const planCount = dayPlan(ds).length;
+    const dotN = Math.min(planCount, 3);
+    const dots = Array.from({ length: dotN }).map(() => '<span class="cal-dot"></span>').join('');
+    html += `
+      <button class="cal-cell ${outside ? 'outside' : ''} ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}"
+              data-date="${ds}">
+        <span class="cal-num">${d.getDate()}</span>
+        <span class="cal-dots">${dots}</span>
+      </button>
+    `;
+  }
+  const grid = $('#pick-grid');
+  grid.innerHTML = html;
+  grid.querySelectorAll('.cal-cell').forEach(cell => cell.addEventListener('click', () => {
+    const ds = cell.dataset.date;
+    // Setting override to tomorrow's date == no override (keeps header as TOMORROW)
+    state.plannerOverrideDate = (ds === tomorrowStr()) ? null : ds;
+    closePlanPicker();
+    renderPlanner();
+  }));
+}
+
 // ---------- CALENDAR + STATS VIEW ----------
 $$('.date-nav').forEach(btn => btn.addEventListener('click', () => {
   const nav = btn.dataset.nav;
@@ -549,6 +614,7 @@ $$('.date-nav').forEach(btn => btn.addEventListener('click', () => {
 }));
 
 function tomorrowStr() { return dateStr(addDays(parseDate(todayStr()), 1)); }
+function plannerDate() { return state.plannerOverrideDate || tomorrowStr(); }
 
 $('#selected-edit-btn').addEventListener('click', () => {
   state.editingSelected = !state.editingSelected;
