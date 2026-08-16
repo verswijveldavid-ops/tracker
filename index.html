@@ -10,7 +10,7 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" type="image/svg+xml" href="icon.svg" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link rel="stylesheet" href="styles.css?v=9" />
+  <link rel="stylesheet" href="styles.css?v=10" />
   <title>Tracker</title>
 </head>
 <body>
@@ -18,7 +18,20 @@
   <!-- SIGN IN -->
   <div id="signin-overlay" class="overlay hidden">
     <div class="signin-card">
-      <div class="signin-logo">◆</div>
+      <div class="signin-logo">
+        <svg viewBox="0 0 200 260" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="siglogo" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#c8b8ff"/>
+              <stop offset="100%" stop-color="#6a5af9"/>
+            </linearGradient>
+          </defs>
+          <g fill="none" stroke="url(#siglogo)" stroke-width="16" stroke-linecap="round">
+            <circle cx="100" cy="70" r="55"/>
+            <circle cx="100" cy="190" r="55"/>
+          </g>
+        </svg>
+      </div>
       <h1>Tracker</h1>
       <p>Sign in to sync across devices.</p>
       <button id="signin-btn" class="btn-primary">Sign in with Google</button>
@@ -242,6 +255,6 @@
     </nav>
   </main>
 
-  <script type="module" src="app.js?v=9"></script>
+  <script type="module" src="app.js?v=10"></script>
 </body>
 </html>

@@ -68,10 +68,11 @@ body {
 }
 
 .signin-logo {
-  font-size: 48px;
-  color: var(--accent);
-  margin-bottom: 8px;
+  width: 72px;
+  height: 96px;
+  margin: 0 auto 8px;
 }
+.signin-logo svg { width: 100%; height: 100%; display: block; }
 
 .signin-card h1 { margin: 0 0 8px; font-size: 28px; }
 .signin-card p { color: var(--text-dim); margin: 0 0 24px; }

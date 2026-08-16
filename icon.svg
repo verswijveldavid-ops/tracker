@@ -4,14 +4,14 @@
       <stop offset="0%" stop-color="#1f1a38"/>
       <stop offset="100%" stop-color="#0e0b1e"/>
     </linearGradient>
-    <linearGradient id="mark" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#b39cff"/>
+    <linearGradient id="mark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#c8b8ff"/>
       <stop offset="100%" stop-color="#6a5af9"/>
     </linearGradient>
   </defs>
   <rect width="512" height="512" rx="112" fill="url(#bg)"/>
-  <g transform="translate(256 256)">
-    <path d="M 0 -120 L 104 0 L 0 120 L -104 0 Z" fill="url(#mark)"/>
-    <path d="M 0 -60 L 52 0 L 0 60 L -52 0 Z" fill="#0e0b1e"/>
+  <g fill="none" stroke="url(#mark)" stroke-width="30" stroke-linecap="round">
+    <circle cx="256" cy="180" r="80"/>
+    <circle cx="256" cy="332" r="80"/>
   </g>
 </svg>
