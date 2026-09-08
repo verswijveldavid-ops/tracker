@@ -173,6 +173,40 @@ function escapeHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 }
 
+async function copyText(text) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {}
+  // Fallback for older browsers / non-HTTPS
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.top = '-9999px';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    return true;
+  } catch { return false; }
+}
+
+function flashCopied(btn) {
+  btn.classList.add('copied');
+  setTimeout(() => btn.classList.remove('copied'), 900);
+}
+
+function autosizeTextarea(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
+const COPY_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M6 15H5a2 2 0 01-2-2V5a2 2 0 012-2h8a2 2 0 012 2v1"/></svg>`;
+
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 
@@ -373,36 +407,42 @@ function renderTodayPlan() {
   card.classList.remove('hidden');
   list.innerHTML = plan.map((item, i) => `
     <div class="plan-check-row ${item.done ? 'done' : ''}" data-idx="${i}">
-      <div class="plan-check-box">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg>
-      </div>
-      <div class="plan-check-text">${escapeHtml(item.text)}</div>
-      <button class="plan-procrastinate" data-idx="${i}" title="Move to tomorrow">
+      <button class="plan-check-tap" data-act="toggle">
+        <div class="plan-check-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg>
+        </div>
+        <div class="plan-check-text">${escapeHtml(item.text)}</div>
+      </button>
+      <button class="plan-copy" data-act="copy" aria-label="Copy">${COPY_ICON}</button>
+      <button class="plan-procrastinate" data-act="procrastinate" title="Move to tomorrow">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
       </button>
     </div>
   `).join('');
   list.querySelectorAll('.plan-check-row').forEach(row => {
-    // clicks on the row toggle done, except the procrastinate button
-    row.addEventListener('click', (e) => {
-      if (e.target.closest('.plan-procrastinate')) return;
-      const idx = parseInt(row.dataset.idx, 10);
+    const idx = parseInt(row.dataset.idx, 10);
+    row.querySelector('[data-act="toggle"]').addEventListener('click', () => {
       const cur = dayPlan(today).slice();
       cur[idx] = { ...cur[idx], done: !cur[idx].done };
       saveDay(today, { plan: cur });
       row.classList.toggle('done');
     });
-    // procrastinate: move from today to tomorrow
-    row.querySelector('.plan-procrastinate').addEventListener('click', async (e) => {
+    row.querySelector('[data-act="copy"]').addEventListener('click', async (e) => {
       e.stopPropagation();
-      const idx = parseInt(row.dataset.idx, 10);
+      const item = dayPlan(today)[idx];
+      if (!item) return;
+      await copyText(item.text);
+      flashCopied(e.currentTarget);
+    });
+    // procrastinate: move from today to tomorrow
+    row.querySelector('[data-act="procrastinate"]').addEventListener('click', async (e) => {
+      e.stopPropagation();
       const item = dayPlan(today)[idx];
       if (!item) return;
       const todayNew = dayPlan(today).slice();
       todayNew.splice(idx, 1);
       const tomorrow = tomorrowStr();
       const tomorrowNew = dayPlan(tomorrow).slice();
-      // add as fresh (undone) to tomorrow
       tomorrowNew.push({ text: item.text, done: false });
       await Promise.all([
         saveDay(today, { plan: todayNew }),
@@ -521,26 +561,36 @@ function renderPlanner() {
   list.innerHTML = plan.map((item, i) => `
     <div class="plan-row" data-idx="${i}">
       <span class="plan-bullet">•</span>
-      <input type="text" value="${escapeHtml(item.text)}" />
-      <button class="plan-del" aria-label="Delete">✕</button>
+      <textarea rows="1" data-role="text">${escapeHtml(item.text)}</textarea>
+      <button class="plan-btn plan-copy-btn" data-act="copy" aria-label="Copy">${COPY_ICON}</button>
+      <button class="plan-btn plan-del" data-act="del" aria-label="Delete">✕</button>
     </div>
   `).join('');
 
   list.querySelectorAll('.plan-row').forEach(row => {
     const idx = parseInt(row.dataset.idx, 10);
-    const input = row.querySelector('input');
-    input.addEventListener('change', () => {
-      const val = input.value.trim();
+    const ta = row.querySelector('textarea');
+    autosizeTextarea(ta);
+    ta.addEventListener('input', () => autosizeTextarea(ta));
+    ta.addEventListener('change', () => {
+      const val = ta.value.trim();
       const cur = dayPlan(date).slice();
       if (!val) cur.splice(idx, 1);
       else cur[idx] = { ...cur[idx], text: val };
       saveDay(date, { plan: cur });
       if (!val) renderPlanner();
     });
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); $('#plan-new-input').focus(); }
+    ta.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ta.blur(); $('#plan-new-input').focus(); }
     });
-    row.querySelector('.plan-del').addEventListener('click', () => {
+    row.querySelector('[data-act="copy"]').addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const item = dayPlan(date)[idx];
+      if (!item) return;
+      await copyText(item.text);
+      flashCopied(e.currentTarget);
+    });
+    row.querySelector('[data-act="del"]').addEventListener('click', () => {
       const cur = dayPlan(date).slice();
       cur.splice(idx, 1);
       saveDay(date, { plan: cur });

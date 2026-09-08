@@ -394,7 +394,7 @@ body {
 }
 .plan-row, .plan-add-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
   padding: 6px 8px;
   border-radius: 8px;
@@ -406,12 +406,13 @@ body {
   align-items: center;
   justify-content: center;
   width: 20px;
+  min-height: 40px;
   color: var(--accent);
   font-size: 18px;
   flex-shrink: 0;
 }
 .plan-bullet-add { color: var(--text-dim); font-size: 20px; font-weight: 300; }
-.plan-row input, .plan-add-row input {
+.plan-row textarea, .plan-add-row input, .plan-add-row textarea {
   flex: 1;
   min-width: 0;
   background: transparent;
@@ -421,11 +422,19 @@ body {
   font-size: 15px;
   padding: 8px 0;
   outline: none;
+  resize: none;
+  overflow: hidden;
+  line-height: 1.4;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  min-height: 24px;
+  font-family: inherit;
 }
-.plan-add-row input::placeholder { color: var(--text-mute); }
-.plan-row .plan-del {
-  width: 32px;
-  height: 32px;
+.plan-add-row input::placeholder,
+.plan-add-row textarea::placeholder { color: var(--text-mute); }
+.plan-row .plan-btn {
+  width: 34px;
+  height: 34px;
   background: transparent;
   border: none;
   color: var(--text-mute);
@@ -433,26 +442,47 @@ body {
   border-radius: 6px;
   font-size: 14px;
   opacity: 0;
-  transition: opacity 0.15s, color 0.15s;
+  transition: opacity 0.15s, color 0.15s, background 0.15s;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
 }
-.plan-row:hover .plan-del { opacity: 1; }
-.plan-row .plan-del:active { color: var(--danger); background: var(--bg-elev-2); }
+.plan-row .plan-btn svg { width: 16px; height: 16px; }
+.plan-row:hover .plan-btn { opacity: 1; }
+.plan-row .plan-btn:active { background: var(--bg-elev-2); }
+.plan-row .plan-btn.plan-del:active { color: var(--danger); }
+.plan-row .plan-btn.copied { color: var(--success); opacity: 1; }
 @media (hover: none) {
-  .plan-row .plan-del { opacity: 1; }
+  .plan-row .plan-btn { opacity: 1; }
 }
 
 /* Today's plan (checkable version on Today tab) */
 .plan-check-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
   padding: 10px 8px;
   border-radius: 8px;
-  cursor: pointer;
   transition: background 0.1s;
   min-height: 44px;
 }
-.plan-check-row:active { background: var(--bg-elev-2); }
+.plan-check-row .plan-check-tap {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+}
+.plan-check-row .plan-check-tap:active { opacity: 0.7; }
 .plan-check-box {
   width: 22px;
   height: 22px;
@@ -462,6 +492,7 @@ body {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  margin-top: 1px;
   transition: all 0.15s;
 }
 .plan-check-row.done .plan-check-box {
@@ -470,7 +501,32 @@ body {
 }
 .plan-check-box svg { width: 12px; height: 12px; color: white; opacity: 0; }
 .plan-check-row.done .plan-check-box svg { opacity: 1; }
-.plan-check-text { flex: 1; font-size: 15px; }
+.plan-check-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  line-height: 1.4;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+.plan-check-row .plan-copy {
+  width: 34px;
+  min-height: 34px;
+  background: transparent;
+  border: none;
+  color: var(--text-mute);
+  cursor: pointer;
+  border-radius: 6px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background 0.15s;
+  margin-top: 2px;
+}
+.plan-check-row .plan-copy svg { width: 16px; height: 16px; }
+.plan-check-row .plan-copy:active { background: var(--bg-elev-2); }
+.plan-check-row .plan-copy.copied { color: var(--success); }
 .plan-check-row.done .plan-check-text {
   color: var(--text-dim);
   text-decoration: line-through;
@@ -588,7 +644,7 @@ input[type="range"]::-moz-range-thumb {
 
 .habit-btn {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 14px;
   width: 100%;
   padding: 14px 16px;
@@ -602,6 +658,8 @@ input[type="range"]::-moz-range-thumb {
   transition: all 0.15s;
   min-height: var(--tap);
 }
+.habit-btn > .habit-check,
+.habit-btn > .habit-emoji { margin-top: 2px; }
 .habit-btn.done {
   background: linear-gradient(135deg, rgba(138, 124, 255, 0.15), rgba(106, 90, 249, 0.05));
   border-color: var(--accent);
@@ -626,8 +684,15 @@ input[type="range"]::-moz-range-thumb {
 .habit-check svg { width: 14px; height: 14px; color: white; opacity: 0; }
 .habit-btn.done .habit-check svg { opacity: 1; }
 
-.habit-emoji { font-size: 20px; }
-.habit-name { flex: 1; }
+.habit-emoji { font-size: 20px; flex-shrink: 0; }
+.habit-name {
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+  padding-top: 2px;
+}
 
 /* DIARY */
 #diary {
